@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Notes PWA</title>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --background: #f0f4f8;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--background);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: move;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        [contenteditable="true"] {
+            border-bottom: 2px dashed #ccc;
+            padding: 5px;
+            margin: 5px 0;
+        }
+
+        .speech-btn {
+            background: #4CAF50;
+            padding: 5px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="addNewTopic()">Add New Topic</button>
+    </div>
+    <div class="grid" id="notesGrid"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script>
+        // Initialize Sortable.js for drag and drop
+        let grid = document.getElementById('notesGrid');
+        Sortable.create(grid, {
+            animation: 150,
+            onUpdate: saveToLocalStorage
+        });
+
+        // Speech recognition setup
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        // Load notes on startup
+        document.addEventListener('DOMContentLoaded', loadNotes);
+
+        function addNewTopic(title = 'New Topic') {
+            const note = {
+                id: Date.now(),
+                title,
+                content: '',
+                subtopics: []
+            };
+
+            const card = createNoteCard(note);
+            grid.appendChild(card);
+            saveToLocalStorage();
+        }
+
+        function createNoteCard(note) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.id = note.id;
+            card.innerHTML = `
+                <div class="card-header">
+                    <h3 contenteditable="true" onblur="updateNote(${note.id}, this.innerText, 'title')">${note.title}</h3>
+                    <div>
+                        <button class="speech-btn" onclick="startSpeechRecognition(${note.id})">🎤</button>
+                        <button onclick="deleteNote(${note.id})">×</button>
+                    </div>
+                </div>
+                <div contenteditable="true" onblur="updateNote(${note.id}, this.innerText, 'content')">${note.content}</div>
+                <div class="subtopics"></div>
+                <button onclick="addSubtopic(${note.id})">Add Subtopic</button>
+            `;
+            return card;
+        }
+
+        function startSpeechRecognition(noteId) {
+            recognition.start();
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                const noteElement = document.querySelector(`[data-id="${noteId}"] [contenteditable="true"]:last-child`);
+                noteElement.innerText += ' ' + transcript;
+                updateNote(noteId, noteElement.innerText, 'content');
+            };
+        }
+
+        function addSubtopic(noteId) {
+            const subtopic = prompt('Enter subtopic name:');
+            if (subtopic) {
+                const note = getNoteById(noteId);
+                note.subtopics.push(subtopic);
+                const subtopicsDiv = document.querySelector(`[data-id="${noteId}"] .subtopics`);
+                const subtopicElem = document.createElement('div');
+                subtopicElem.contentEditable = true;
+                subtopicElem.innerText = subtopic;
+                subtopicsDiv.appendChild(subtopicElem);
+                saveToLocalStorage();
+            }
+        }
+
+        function updateNote(id, value, field) {
+            const notes = getNotes();
+            const note = notes.find(n => n.id === id);
+            if (note) {
+                note[field] = value;
+                localStorage.setItem('notes', JSON.stringify(notes));
+            }
+        }
+
+        function deleteNote(id) {
+            if (confirm('Are you sure?')) {
+                const card = document.querySelector(`[data-id="${id}"]`);
+                card.remove();
+                const notes = getNotes().filter(n => n.id !== id);
+                localStorage.setItem('notes', JSON.stringify(notes));
+            }
+        }
+
+        function getNotes() {
+            return JSON.parse(localStorage.getItem('notes') || '[]');
+        }
+
+        function getNoteById(id) {
+            return getNotes().find(n => n.id === id);
+        }
+
+        function loadNotes() {
+            const notes = getNotes();
+            notes.forEach(note => {
+                grid.appendChild(createNoteCard(note));
+            });
+        }
+
+        function saveToLocalStorage() {
+            const notes = [];
+            document.querySelectorAll('.card').forEach(card => {
+                notes.push({
+                    id: Number(card.dataset.id),
+                    title: card.querySelector('h3').innerText,
+                    content: card.querySelector('[contenteditable="true"]:last-child').innerText,
+                    subtopics: []
+                });
+            });
+            localStorage.setItem('notes', JSON.stringify(notes));
+        }
+
+        // PWA Setup
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('ServiceWorker registered'))
+                    .catch(err => console.log('ServiceWorker registration failed: ', err));
+            });
+        }
+    </script>
+</body>
+</html>
