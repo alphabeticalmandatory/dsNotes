@@ -129,6 +129,7 @@
     
     document.addEventListener('DOMContentLoaded', loadNotes);
 
+
     function addNewTopic(title = 'New Note') {
       const note = {
         id: Date.now(),
@@ -136,9 +137,21 @@
         content: '',
         fontSize: '16px'
       };
-      grid.appendChild(createNoteCard(note));
+      // Prepend new notes to the grid
+      grid.prepend(createNoteCard(note));
       saveToLocalStorage();
     }
+
+    function loadNotes() {
+      const notes = JSON.parse(localStorage.getItem('notes')) || [];
+      grid.innerHTML = '';
+      // Sort notes by ID descending (newest first)
+      notes.sort((a, b) => b.id - a.id).forEach(note => {
+        grid.appendChild(createNoteCard(note));
+      });
+    }
+
+      
 
     function createNoteCard(note) {
       const card = document.createElement('div');
@@ -219,11 +232,7 @@
       localStorage.setItem('notes', JSON.stringify(notes));
     }
 
-    function loadNotes() {
-      const notes = JSON.parse(localStorage.getItem('notes')) || [];
-      grid.innerHTML = '';
-      notes.forEach(note => grid.appendChild(createNoteCard(note)));
-    }
+    
 
     // Speech Recognition (optional)
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
