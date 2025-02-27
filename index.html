@@ -56,7 +56,6 @@
         }
 
         .card {
-            background: var(--random-color);
             border-radius: var(--border-radius);
             padding: 15px;
             box-shadow: var(--shadow);
@@ -147,16 +146,18 @@
         let grid = document.getElementById('notesGrid');
         Sortable.create(grid, { animation: 150, onUpdate: saveToLocalStorage });
 
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-
         const colors = ['#FFEB3B', '#FF9800', '#FFCDD2', '#81C784', '#64B5F6', '#E1BEE7'];
 
         document.addEventListener('DOMContentLoaded', loadNotes);
 
         function addNewTopic(title = 'New Note') {
-            const note = { id: Date.now(), title, content: '', subtopics: [], color: colors[Math.floor(Math.random() * colors.length)] };
+            const note = { 
+                id: Date.now(), 
+                title, 
+                content: '', 
+                subtopics: [], 
+                color: colors[Math.floor(Math.random() * colors.length)] 
+            };
             grid.appendChild(createNoteCard(note));
             saveToLocalStorage();
         }
@@ -172,9 +173,6 @@
                     <div class="action-buttons">
                         <button class="icon-btn" onclick="editTitle(${note.id})">
                             <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="icon-btn" onclick="startSpeechRecognition(${note.id})">
-                            <i class="fas fa-microphone"></i>
                         </button>
                         <button class="icon-btn" onclick="deleteNote(${note.id})">
                             <i class="fas fa-trash"></i>
@@ -233,16 +231,20 @@
             saveToLocalStorage();
         }
 
-        function startSpeechRecognition(noteId) {
-            recognition.start();
-            recognition.onresult = (event) => {
-                document.querySelector(`[data-id="${noteId}"] .content`).innerText += ' ' + event.results[0][0].transcript;
-                saveToLocalStorage();
-            };
+        function saveToLocalStorage() {
+            const notes = Array.from(document.querySelectorAll('.card')).map(card => ({
+                id: card.dataset.id,
+                title: card.querySelector('h3').innerText,
+                content: card.querySelector('.content').innerText,
+                color: card.style.background
+            }));
+            localStorage.setItem('notes', JSON.stringify(notes));
         }
 
-        function saveToLocalStorage() { /* Save logic */ }
-        function loadNotes() { /* Load logic */ }
+        function loadNotes() {
+            const notes = JSON.parse(localStorage.getItem('notes')) || [];
+            notes.forEach(note => grid.appendChild(createNoteCard(note)));
+        }
     </script>
 </body>
 </html>
