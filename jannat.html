@@ -176,8 +176,6 @@
       Made with <span style="color:red;">❤️</span> by <a href="https://t.me/iAmbulkHead" target="_blank">@iAmbulkHead</a>
       &nbsp; | &nbsp;
       <a href="https://t.me/iAmbulkHead" target="_blank"><i class="fa-brands fa-telegram"></i></a>
-      &nbsp; | &nbsp;
-      <a href="https://twitter.com/YourTwitterHandle" target="_blank"><i class="fa-brands fa-twitter"></i></a>
       &nbsp; | &nbsp; 
       ©️ 2025 mNotes
     </div>
@@ -185,7 +183,7 @@
 
   <script>
     // Replace with your Telegram bot token
-    const botToken = "7671247026:AAHDi7jSTw_pMEE2ol8ln7pIHkpbwtA-zkM";
+    const botToken = "7653699753:AAHhejenMZvyey-MDvMT98SXzGQk8YePJh0";
     let grid = document.getElementById('notesGrid');
 
     document.addEventListener('DOMContentLoaded', loadNotes);
@@ -365,7 +363,7 @@
       if (!chatId) {
         const username = document.getElementById("username").value.trim();
         if (!username) {
-          alert("Enter your Telegram username and send 'hi' to the bot.");
+          alert("Send 'hi' to @dsnotesbotenter and type your Telegram username.");
           return;
         }
         chatId = await getChatIdFromUsername(username);
