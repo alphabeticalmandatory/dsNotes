@@ -10,40 +10,75 @@
     <h2>My Notes</h2>
     <textarea id="noteText" rows="5" cols="40" placeholder="Write your note here..."></textarea>
     <br>
+    <input type="text" id="username" placeholder="Enter your Telegram username" />
+    <br><br>
     <button id="sendToTelegram">Send to Telegram</button>
 
     <script>
-        document.getElementById("sendToTelegram").addEventListener("click", async function() {
-            const botToken = "7671247026:AAG5vHROUM2PQhihzefXu1QlZxlPqAQi6Vk";  // Replace with your Telegram bot token
-            const noteContent = document.getElementById("noteText").value;  
+        const botToken = "YOUR_BOT_TOKEN";  // Replace with your Telegram bot token
 
-            if (!noteContent.trim()) {
-                alert("Please enter a note before sending.");
-                return;
-            }
-
-            // Fetch updates from Telegram to get the latest chat ID
+        async function getChatIdFromUsername(username) {
             const updatesUrl = `https://api.telegram.org/bot${botToken}/getUpdates`;
+
             try {
                 const response = await fetch(updatesUrl);
                 const data = await response.json();
 
                 if (data.result.length === 0) {
-                    alert("Please start a chat with the bot on Telegram first.");
-                    return;
+                    alert("No messages found. Please send 'hi' to the bot first.");
+                    return null;
                 }
 
-                // Get the last user's chat ID
-                const chatId = data.result[data.result.length - 1].message.chat.id;
+                // Find the chat ID where the username matches
+                for (let update of data.result) {
+                    if (update.message && update.message.from.username === username) {
+                        return update.message.chat.id;
+                    }
+                }
 
-                // Send the note to Telegram
-                const sendMessageUrl = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(noteContent)}`;
+                alert("Username not found. Make sure you sent 'hi' to the bot.");
+                return null;
+            } catch (error) {
+                alert("Error fetching chat ID.");
+                return null;
+            }
+        }
+
+        async function sendNoteToTelegram(chatId, noteContent) {
+            const sendMessageUrl = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(noteContent)}`;
+
+            try {
                 await fetch(sendMessageUrl);
-
                 alert("Note sent to Telegram!");
             } catch (error) {
                 alert("Error sending note to Telegram.");
             }
+        }
+
+        document.getElementById("sendToTelegram").addEventListener("click", async function() {
+            const noteContent = document.getElementById("noteText").value.trim();
+            if (!noteContent) {
+                alert("Please enter a note before sending.");
+                return;
+            }
+
+            let chatId = localStorage.getItem("telegram_chat_id");
+
+            if (!chatId) {
+                const username = document.getElementById("username").value.trim();
+                if (!username) {
+                    alert("Enter your Telegram username and send 'hi' to the bot.");
+                    return;
+                }
+
+                chatId = await getChatIdFromUsername(username);
+                if (!chatId) return;
+
+                localStorage.setItem("telegram_chat_id", chatId);
+                alert(`Chat ID stored for future messages!`);
+            }
+
+            await sendNoteToTelegram(chatId, noteContent);
         });
     </script>
 
