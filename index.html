@@ -1,250 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quick Notes PWA</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Patrick+Hand&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --text-color: #333;
-            --border-radius: 10px;
-            --shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-            --note-colors: #FFEB3B, #FF9800, #FFCDD2, #81C784, #64B5F6, #E1BEE7;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quick Notes PWA</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Patrick+Hand&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --text-color: #333;
+      --border-radius: 10px;
+      --shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      --note-colors: #FFEB3B, #FF9800, #FFCDD2, #81C784, #64B5F6, #E1BEE7;
+    }
 
-        body {
-            font-family: 'Patrick Hand', cursive;
-            margin: 0;
-            padding: 20px;
-            background: #f4f4f4;
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+    body {
+      font-family: 'Patrick Hand', cursive;
+      margin: 0;
+      padding: 20px;
+      background: #f4f4f4;
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-        .controls {
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            justify-content: flex-start;
-            margin-bottom: 20px;
-        }
+    .controls {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 20px;
+    }
 
-        .btn {
-            padding: 12px 18px;
-            background: #007BFF;
-            color: white;
-            border: none;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-        }
+    .btn {
+      padding: 12px 18px;
+      background: #007BFF;
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
 
-        .grid {
-            width: 100%;
-            max-width: 900px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-        }
+    .grid {
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+    }
 
-        .card {
-            border-radius: var(--border-radius);
-            padding: 15px;
-            box-shadow: var(--shadow);
-            min-height: 150px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            font-family: 'Permanent Marker', cursive;
-            transform: rotate(-1deg);
-        }
+    .card {
+      border-radius: var(--border-radius);
+      padding: 15px;
+      box-shadow: var(--shadow);
+      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      font-family: 'Permanent Marker', cursive;
+      transform: rotate(-1deg);
+    }
 
-        .card:nth-child(even) {
-            transform: rotate(2deg);
-        }
+    .card:nth-child(even) {
+      transform: rotate(2deg);
+    }
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-        h3 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-        .content {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.5);
-            min-height: 40px;
-            outline: none;
-        }
+    .content {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.5);
+      min-height: 40px;
+      outline: none;
+    }
 
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
 
-        .icon-btn {
-            font-size: 1rem;
-            padding: 6px;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border: none;
-            background: transparent;
-            color: var(--text-color);
-        }
+    .icon-btn {
+      font-size: 1rem;
+      padding: 6px;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-color);
+    }
 
-        .subtopics-container {
-            margin-top: 10px;
-        }
+    .subtopics-container {
+      margin-top: 10px;
+    }
 
-        .subtopic {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.5);
-            margin-top: 5px;
-        }
+    .subtopic {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.5);
+      margin-top: 5px;
+    }
 
-        .subtopic div {
-            outline: none;
-            flex-grow: 1;
-        }
-    </style>
+    .subtopic div {
+      outline: none;
+      flex-grow: 1;
+    }
+  </style>
 </head>
 <body>
-    <div class="controls">
-        <button class="btn" onclick="addNewTopic()">
-            <i class="fas fa-plus"></i> New Note
+  <div class="controls">
+    <button class="btn" onclick="addNewTopic()">
+      <i class="fas fa-plus"></i> New Note
+    </button>
+  </div>
+  <div class="grid" id="notesGrid"></div>
+
+  <script>
+    let grid = document.getElementById('notesGrid');
+    Sortable.create(grid, { animation: 150, onUpdate: saveToLocalStorage });
+
+    // Speech Recognition Setup
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    const colors = ['#FFEB3B', '#FF9800', '#FFCDD2', '#81C784', '#64B5F6', '#E1BEE7'];
+
+    document.addEventListener('DOMContentLoaded', loadNotes);
+
+    function addNewTopic(title = 'New Note') {
+      const note = { 
+        id: Date.now(), 
+        title, 
+        content: '', 
+        subtopics: [], 
+        color: colors[Math.floor(Math.random() * colors.length)] 
+      };
+      grid.appendChild(createNoteCard(note));
+      saveToLocalStorage();
+    }
+
+    function createNoteCard(note) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.id = note.id;
+      card.style.background = note.color;
+      card.innerHTML = `
+        <div class="card-header">
+          <h3 onclick="editTitle(${note.id})">${note.title}</h3>
+          <div class="action-buttons">
+            <button class="icon-btn" onclick="editTitle(${note.id})">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="icon-btn" onclick="startSpeechRecognition(${note.id})">
+              <i class="fas fa-microphone"></i>
+            </button>
+            <button class="icon-btn" onclick="deleteNote(${note.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="content" onclick="editContent(this, ${note.id})">${note.content}</div>
+        <div class="subtopics-container">
+          ${note.subtopics.map(sub => `
+            <div class="subtopic">
+              <div contenteditable="true" onblur="saveToLocalStorage()">${sub}</div>
+              <button class="icon-btn" onclick="deleteSubtopic(this)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn" onclick="addSubtopic(${note.id})">
+          <i class="fas fa-plus"></i> Add Subtopic
         </button>
-    </div>
-    <div class="grid" id="notesGrid"></div>
+      `;
+      return card;
+    }
 
-    <script>
-        let grid = document.getElementById('notesGrid');
-        Sortable.create(grid, { animation: 150, onUpdate: saveToLocalStorage });
+    function editTitle(noteId) {
+      const titleElement = document.querySelector(`[data-id="${noteId}"] h3`);
+      titleElement.setAttribute('contenteditable', 'true');
+      titleElement.focus();
+      titleElement.onblur = () => {
+        titleElement.removeAttribute('contenteditable');
+        updateNote(noteId, titleElement.innerText, 'title');
+      };
+    }
 
-        const colors = ['#FFEB3B', '#FF9800', '#FFCDD2', '#81C784', '#64B5F6', '#E1BEE7'];
+    function editContent(element, noteId) {
+      element.setAttribute('contenteditable', 'true');
+      element.focus();
+      element.onblur = () => {
+        element.removeAttribute('contenteditable');
+        updateNote(noteId, element.innerText, 'content');
+      };
+    }
 
-        document.addEventListener('DOMContentLoaded', loadNotes);
+    function startSpeechRecognition(noteId) {
+      recognition.start();
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const contentEl = document.querySelector(`[data-id="${noteId}"] .content`);
+        contentEl.innerText += ' ' + transcript;
+        saveToLocalStorage();
+      };
+    }
 
-        function addNewTopic(title = 'New Note') {
-            const note = { 
-                id: Date.now(), 
-                title, 
-                content: '', 
-                subtopics: [], 
-                color: colors[Math.floor(Math.random() * colors.length)] 
-            };
-            grid.appendChild(createNoteCard(note));
-            saveToLocalStorage();
-        }
+    function addSubtopic(noteId) {
+      const container = document.querySelector(`[data-id="${noteId}"] .subtopics-container`);
+      const subtopic = document.createElement('div');
+      subtopic.className = 'subtopic';
+      subtopic.innerHTML = `
+        <div contenteditable="true" onblur="saveToLocalStorage()">New Subtopic</div>
+        <button class="icon-btn" onclick="deleteSubtopic(this)">
+          <i class="fas fa-trash"></i>
+        </button>
+      `;
+      container.appendChild(subtopic);
+      saveToLocalStorage();
+    }
 
-        function createNoteCard(note) {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.dataset.id = note.id;
-            card.style.background = note.color;
-            card.innerHTML = `
-                <div class="card-header">
-                    <h3 onclick="editTitle(${note.id})">${note.title}</h3>
-                    <div class="action-buttons">
-                        <button class="icon-btn" onclick="editTitle(${note.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="icon-btn" onclick="deleteNote(${note.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="content" onclick="editContent(this, ${note.id})">${note.content}</div>
-                <div class="subtopics-container"></div>
-                <button class="btn" onclick="addSubtopic(${note.id})">
-                    <i class="fas fa-plus"></i> Add Subtopic
-                </button>
-            `;
-            return card;
-        }
+    function deleteSubtopic(btn) {
+      btn.parentElement.remove();
+      saveToLocalStorage();
+    }
 
-        function editTitle(noteId) {
-            const titleElement = document.querySelector(`[data-id="${noteId}"] h3`);
-            titleElement.setAttribute('contenteditable', 'true');
-            titleElement.focus();
-            titleElement.onblur = () => {
-                titleElement.removeAttribute('contenteditable');
-                updateNote(noteId, titleElement.innerText, 'title');
-            };
-        }
+    function deleteNote(id) {
+      document.querySelector(`[data-id="${id}"]`).remove();
+      saveToLocalStorage();
+    }
 
-        function editContent(element, noteId) {
-            element.setAttribute('contenteditable', 'true');
-            element.focus();
-            element.onblur = () => {
-                element.removeAttribute('contenteditable');
-                updateNote(noteId, element.innerText, 'content');
-            };
-        }
+    function updateNote(noteId, value, key) {
+      // This demo updates via saveToLocalStorage
+      saveToLocalStorage();
+    }
 
-        function addSubtopic(noteId) {
-            const container = document.querySelector(`[data-id="${noteId}"] .subtopics-container`);
-            const subtopic = document.createElement('div');
-            subtopic.className = 'subtopic';
-            subtopic.innerHTML = `
-                <div contenteditable="true">New Subtopic</div>
-                <button class="icon-btn" onclick="deleteSubtopic(this)">
-                    <i class="fas fa-trash"></i>
-                </button>
-            `;
-            container.appendChild(subtopic);
-            saveToLocalStorage();
-        }
+    function saveToLocalStorage() {
+      const notes = Array.from(document.querySelectorAll('.card')).map(card => ({
+        id: card.dataset.id,
+        title: card.querySelector('h3').innerText,
+        content: card.querySelector('.content').innerText,
+        color: card.style.background,
+        subtopics: Array.from(card.querySelectorAll('.subtopics-container .subtopic div')).map(div => div.innerText)
+      }));
+      localStorage.setItem('notes', JSON.stringify(notes));
+    }
 
-        function deleteSubtopic(btn) {
-            btn.parentElement.remove();
-            saveToLocalStorage();
-        }
-
-        function deleteNote(id) {
-            document.querySelector(`[data-id="${id}"]`).remove();
-            saveToLocalStorage();
-        }
-
-        function saveToLocalStorage() {
-            const notes = Array.from(document.querySelectorAll('.card')).map(card => ({
-                id: card.dataset.id,
-                title: card.querySelector('h3').innerText,
-                content: card.querySelector('.content').innerText,
-                color: card.style.background
-            }));
-            localStorage.setItem('notes', JSON.stringify(notes));
-        }
-
-        function loadNotes() {
-            const notes = JSON.parse(localStorage.getItem('notes')) || [];
-            notes.forEach(note => grid.appendChild(createNoteCard(note)));
-        }
-    </script>
+    function loadNotes() {
+      const notes = JSON.parse(localStorage.getItem('notes')) || [];
+      grid.innerHTML = '';
+      notes.forEach(note => grid.appendChild(createNoteCard(note)));
+    }
+  </script>
 </body>
 </html>
