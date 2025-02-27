@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floating Stopwatch (Web PIP Mode)</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        button { padding: 10px 20px; font-size: 18px; margin-top: 10px; }
+        canvas { display: none; } /* Hidden canvas for rendering */
+    </style>
+</head>
+<body>
+
+    <h1>Web Floating Stopwatch</h1>
+    <button onclick="startStopwatch()">Start Stopwatch</button>
+    <button onclick="stopStopwatch()">Stop</button>
+    <button onclick="togglePIP()">Toggle PIP</button>
+
+    <canvas id="canvas" width="300" height="150"></canvas>
+    <video id="video" width="300" height="150" autoplay muted playsinline></video>
+
+    <script>
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let video = document.getElementById('video');
+        let stream = canvas.captureStream();
+        video.srcObject = stream;
+
+        let startTime = null, interval = null;
+        
+        function drawTime() {
+            let elapsed = startTime ? (Date.now() - startTime) / 1000 : 0;
+            let minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            let seconds = Math.floor(elapsed % 60).toString().padStart(2, '0');
+            let ms = Math.floor((elapsed % 1) * 100).toString().padStart(2, '0');
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.font = '40px Arial';
+            ctx.fillText(`${minutes}:${seconds}:${ms}`, 50, 80);
+        }
+
+        function startStopwatch() {
+            startTime = Date.now();
+            interval = setInterval(drawTime, 100);
+        }
+
+        function stopStopwatch() {
+            clearInterval(interval);
+        }
+
+        async function togglePIP() {
+            if (document.pictureInPictureElement) {
+                await document.exitPictureInPicture();
+            } else {
+                await video.requestPictureInPicture();
+            }
+        }
+    </script>
+
+</body>
+</html>
