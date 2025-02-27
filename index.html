@@ -1,78 +1,104 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:hx="http://www.w3.org/1999/xhtml">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quick Notes PWA</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/htmx.org"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root {
-            --primary-color: #2196F3;
-            --background: #f0f4f8;
+            --primary-color: #007BFF;
+            --text-color: #333;
+            --background: #F9FAFB;
+            --card-bg: #FFFFFF;
+            --border-radius: 10px;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 20px;
             background: var(--background);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .controls {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #0056b3;
         }
 
         .grid {
+            width: 100%;
+            max-width: 800px;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: 1fr;
+            gap: 15px;
         }
 
         .card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            cursor: move;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            box-shadow: var(--shadow);
             position: relative;
+            transition: transform 0.1s ease-in-out;
+        }
+
+        .card:hover {
+            transform: scale(1.02);
         }
 
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
         }
 
-        .controls {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
+        h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
         }
 
-        .btn {
-            padding: 12px 20px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-        }
-
-        .btn-success {
-            background: #4CAF50;
-        }
-
-        [contenteditable="true"] {
-            border-bottom: 2px dashed #ccc;
-            padding: 5px;
-            margin: 5px 0;
+        .content {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            background: #f4f4f4;
             min-height: 40px;
+            outline: none;
+            transition: background 0.2s;
+        }
+
+        .content:focus {
+            background: #e9ecef;
         }
 
         .action-buttons {
@@ -81,58 +107,65 @@
         }
 
         .icon-btn {
-            font-size: 1.2em;
-            padding: 10px;
+            font-size: 1rem;
+            padding: 6px;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-color);
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: #e9ecef;
+        }
+
+        .subtopics-container {
+            margin-top: 10px;
         }
 
         .subtopic {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin: 5px 0;
+            justify-content: space-between;
+            padding: 8px;
+            border-radius: 6px;
+            background: #f4f4f4;
+            margin-top: 5px;
+        }
+
+        .subtopic div {
+            outline: none;
+            flex-grow: 1;
         }
     </style>
 </head>
 <body>
     <div class="controls">
-        <button class="btn" hx-post="/add-topic" hx-swap="beforeend" hx-target="#notesGrid" onclick="addNewTopic()">
+        <button class="btn" onclick="addNewTopic()">
             <i class="fas fa-plus"></i> New Topic
         </button>
     </div>
     <div class="grid" id="notesGrid"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
-        // Initialize Sortable.js
         let grid = document.getElementById('notesGrid');
-        Sortable.create(grid, {
-            animation: 150,
-            onUpdate: saveToLocalStorage
-        });
+        Sortable.create(grid, { animation: 150, onUpdate: saveToLocalStorage });
 
-        // Speech Recognition Setup
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.continuous = false;
         recognition.interimResults = false;
 
-        // Load notes on startup
         document.addEventListener('DOMContentLoaded', loadNotes);
 
         function addNewTopic(title = 'New Topic') {
-            const note = {
-                id: Date.now(),
-                title,
-                content: '',
-                subtopics: []
-            };
-
+            const note = { id: Date.now(), title, content: '', subtopics: [] };
             const card = createNoteCard(note);
             grid.appendChild(card);
             saveToLocalStorage();
@@ -144,8 +177,11 @@
             card.dataset.id = note.id;
             card.innerHTML = `
                 <div class="card-header">
-                    <h3 contenteditable="true" onblur="updateNote(${note.id}, this.innerText, 'title')">${note.title}</h3>
+                    <h3>${note.title}</h3>
                     <div class="action-buttons">
+                        <button class="icon-btn" onclick="editTitle(${note.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
                         <button class="icon-btn btn-success" onclick="startSpeechRecognition(${note.id})">
                             <i class="fas fa-microphone"></i>
                         </button>
@@ -154,16 +190,8 @@
                         </button>
                     </div>
                 </div>
-                <div class="content" contenteditable="true" 
-                     onblur="updateNote(${note.id}, this.innerText, 'content')">${note.content}</div>
-                <div class="subtopics-container">
-                    ${note.subtopics.map(st => `
-                        <div class="subtopic">
-                            <i class="fas fa-grip-lines"></i>
-                            <div contenteditable="true">${st}</div>
-                        </div>
-                    `).join('')}
-                </div>
+                <div class="content" onclick="editContent(this, ${note.id})">${note.content}</div>
+                <div class="subtopics-container"></div>
                 <button class="btn" onclick="addSubtopic(${note.id})">
                     <i class="fas fa-plus"></i> Add Subtopic
                 </button>
@@ -171,60 +199,41 @@
             return card;
         }
 
-        function startSpeechRecognition(noteId) {
-            recognition.start();
-            const noteElement = document.querySelector(`[data-id="${noteId}"] .content`);
-            
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                noteElement.innerText += ' ' + transcript;
-                updateNote(noteId, noteElement.innerText, 'content');
-            };
-            
-            recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
+        function editTitle(noteId) {
+            const titleElement = document.querySelector(`[data-id="${noteId}"] h3`);
+            titleElement.setAttribute('contenteditable', 'true');
+            titleElement.focus();
+            titleElement.onblur = () => {
+                titleElement.removeAttribute('contenteditable');
+                updateNote(noteId, titleElement.innerText, 'title');
             };
         }
 
-        function addSubtopic(noteId) {
-            const subtopicsContainer = document.querySelector(`[data-id="${noteId}"] .subtopics-container`);
-            const subtopic = document.createElement('div');
-            subtopic.className = 'subtopic';
-            subtopic.innerHTML = `
-                <i class="fas fa-grip-lines"></i>
-                <div contenteditable="true" onblur="updateSubtopic(${noteId}, this)">New Subtopic</div>
-            `;
-            subtopicsContainer.appendChild(subtopic);
-            updateSubtopicList(noteId);
-        }
-
-        function updateSubtopicList(noteId) {
-            const note = getNoteById(noteId);
-            const subtopics = Array.from(document.querySelectorAll(`[data-id="${noteId}"] .subtopic div`))
-                .map(el => el.innerText);
-            note.subtopics = subtopics;
-            saveToLocalStorage();
+        function editContent(element, noteId) {
+            element.setAttribute('contenteditable', 'true');
+            element.focus();
+            element.onblur = () => {
+                element.removeAttribute('contenteditable');
+                updateNote(noteId, element.innerText, 'content');
+            };
         }
 
         function deleteNote(id) {
-            if (confirm('Are you sure you want to delete this note?')) {
-                const card = document.querySelector(`[data-id="${id}"]`);
-                card.remove();
-                const notes = getNotes().filter(n => n.id !== id);
-                localStorage.setItem('notes', JSON.stringify(notes));
-            }
+            document.querySelector(`[data-id="${id}"]`).remove();
+            saveToLocalStorage();
         }
 
-        // ... (keep the rest of the storage functions from previous version)
-
-        // PWA Setup
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => console.log('ServiceWorker registered'))
-                    .catch(err => console.log('ServiceWorker registration failed: ', err));
-            });
+        function startSpeechRecognition(noteId) {
+            recognition.start();
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.querySelector(`[data-id="${noteId}"] .content`).innerText += ' ' + transcript;
+                saveToLocalStorage();
+            };
         }
+
+        function saveToLocalStorage() { /* Save logic */ }
+        function loadNotes() { /* Load logic */ }
     </script>
 </body>
 </html>
