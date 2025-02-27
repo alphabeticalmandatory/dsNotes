@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minimal Notes</title>
+  <title>Minimal Notes with Telegram Integration</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
@@ -11,7 +11,6 @@
       --background: #F5F7FB;
       --card-bg: rgba(255, 255, 255, 0.9);
     }
-
     body {
       margin: 0;
       padding: 1rem;
@@ -19,12 +18,10 @@
       background: var(--background);
       min-height: 100vh;
     }
-
     .container {
       max-width: 800px;
       margin: 0 auto;
     }
-
     .btn {
       background: var(--primary);
       color: white;
@@ -38,18 +35,15 @@
       font-size: 1rem;
       transition: transform 0.1s ease;
     }
-
     .btn:active {
       transform: scale(0.98);
     }
-
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 1.5rem;
       margin-top: 2rem;
     }
-
     .card {
       background: var(--card-bg);
       border-radius: 12px;
@@ -61,31 +55,29 @@
       display: flex;
       flex-direction: column;
     }
-
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
     }
-
     .card-title {
       font-weight: 600;
       font-size: 1.1rem;
       margin: 0;
       flex-grow: 1;
       padding-right: 1rem;
+      cursor: pointer;
     }
-
     .card-content {
       flex-grow: 1;
       line-height: 1.5;
       color: #444;
-      outline: none;
       overflow-wrap: anywhere;
       font-size: 16px;
+      cursor: text;
+      /* contenteditable is set inline below */
     }
-
     .icon-btn {
       background: none;
       border: none;
@@ -96,17 +88,19 @@
       font-weight: 500;
       font-size: 1.1rem;
     }
-
     .icon-btn:hover {
       color: var(--primary);
     }
-
+    .font-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
     .controls {
       display: flex;
       justify-content: center;
       padding: 2rem 0;
     }
-
     .input-field {
       width: 100%;
       padding: 0.8rem;
@@ -119,6 +113,7 @@
 </head>
 <body>
   <div class="container">
+    <!-- Username input for Telegram sharing -->
     <input type="text" id="username" class="input-field" placeholder="Enter your Telegram username (without @)">
     <div class="controls">
       <button class="btn" onclick="addNewTopic()">
@@ -129,15 +124,17 @@
   </div>
 
   <script>
-    const botToken = "7671247026:AAEn6ruaGylNYPp-UNv2Wia3gh_vWGXsZ2c";  // Replace with your Telegram bot token
+    // Replace with your Telegram bot token
+    const botToken = "YOUR_BOT_TOKEN";  
     let grid = document.getElementById('notesGrid');
 
     document.addEventListener('DOMContentLoaded', loadNotes);
 
+    // Add a new note card
     function addNewTopic(title = 'New Note') {
       const note = {
         id: Date.now(),
-        title,
+        title: title,
         content: '',
         fontSize: '16px'
       };
@@ -145,14 +142,17 @@
       saveToLocalStorage();
     }
 
+    // Load notes from localStorage
     function loadNotes() {
       const notes = JSON.parse(localStorage.getItem('notes')) || [];
       grid.innerHTML = '';
+      // Newest first
       notes.sort((a, b) => b.id - a.id).forEach(note => {
         grid.appendChild(createNoteCard(note));
       });
     }
 
+    // Create the HTML for a note card
     function createNoteCard(note) {
       const card = document.createElement('div');
       card.className = 'card';
@@ -160,43 +160,129 @@
       card.innerHTML = `
         <div class="card-header">
           <h3 class="card-title" onclick="editTitle(${note.id})">${note.title}</h3>
-          <div>
+          <div class="font-controls">
+            <button class="icon-btn" onclick="adjustFontSize(${note.id}, -1)">-</button>
+            <button class="icon-btn" onclick="adjustFontSize(${note.id}, 1)">+</button>
             <button class="icon-btn" onclick="startSpeechRecognition(${note.id})">
               <i class="fas fa-microphone"></i>
             </button>
             <button class="icon-btn" onclick="shareNoteToTelegram(${note.id})">
               <i class="fas fa-share"></i>
             </button>
+            <button class="icon-btn" onclick="confirmDelete(${note.id})">
+              <i class="fas fa-trash"></i>
+            </button>
           </div>
         </div>
         <div class="card-content" 
              onclick="editContent(this, ${note.id})"
-             style="font-size: ${note.fontSize}">
+             style="font-size: ${note.fontSize}"
+             contenteditable="true">
           ${note.content}
         </div>
       `;
       return card;
     }
 
-    async function getChatIdFromUsername(username) {
-      username = username.replace(/^@/, ""); // Remove '@' if present
-      const updatesUrl = `https://api.telegram.org/bot${botToken}/getUpdates`;
+    // Make the note title editable
+    function editTitle(noteId) {
+      const titleElement = document.querySelector(`[data-id="${noteId}"] .card-title`);
+      titleElement.setAttribute('contenteditable', 'true');
+      titleElement.focus();
+      titleElement.onblur = () => {
+        titleElement.removeAttribute('contenteditable');
+        updateNote(noteId, titleElement.innerText, 'title');
+      };
+    }
 
+    // Edit the note content
+    function editContent(element, noteId) {
+      element.focus();
+      element.onblur = () => {
+        updateNote(noteId, element.innerText, 'content');
+      };
+    }
+
+    // Update note data in localStorage
+    function updateNote(noteId, newValue, field) {
+      const notes = JSON.parse(localStorage.getItem('notes')) || [];
+      const noteIndex = notes.findIndex(note => note.id == noteId);
+      if (noteIndex > -1) {
+        notes[noteIndex][field] = newValue;
+        localStorage.setItem('notes', JSON.stringify(notes));
+      }
+    }
+
+    // Adjust font size using ± buttons
+    function adjustFontSize(noteId, change) {
+      const contentEl = document.querySelector(`[data-id="${noteId}"] .card-content`);
+      const currentSize = parseInt(contentEl.style.fontSize) || 16;
+      const newSize = currentSize + (change * 2);
+      if (newSize >= 12 && newSize <= 32) {
+        contentEl.style.fontSize = `${newSize}px`;
+        updateNote(noteId, contentEl.style.fontSize, 'fontSize');
+      }
+    }
+
+    // Confirm deletion of a note
+    function confirmDelete(noteId) {
+      if (confirm("Are you sure you want to delete this note?")) {
+        deleteNote(noteId);
+      }
+    }
+
+    // Delete a note and update storage
+    function deleteNote(noteId) {
+      const noteCard = document.querySelector(`[data-id="${noteId}"]`);
+      if (noteCard) {
+        noteCard.remove();
+        saveToLocalStorage();
+      }
+    }
+
+    // Save all notes to localStorage
+    function saveToLocalStorage() {
+      const notes = Array.from(document.querySelectorAll('.card')).map(card => ({
+        id: card.dataset.id,
+        title: card.querySelector('.card-title').innerText,
+        content: card.querySelector('.card-content').innerText,
+        fontSize: card.querySelector('.card-content').style.fontSize || '16px'
+      }));
+      localStorage.setItem('notes', JSON.stringify(notes));
+    }
+
+    // Speech Recognition functionality
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    function startSpeechRecognition(noteId) {
+      recognition.start();
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const contentEl = document.querySelector(`[data-id="${noteId}"] .card-content`);
+        contentEl.innerText += ' ' + transcript;
+        saveToLocalStorage();
+      };
+    }
+
+    // --- Telegram Integration ---
+
+    // Remove '@' from username (if present) and fetch the chat ID from getUpdates
+    async function getChatIdFromUsername(username) {
+      username = username.replace(/^@/, ""); // Remove '@'
+      const updatesUrl = `https://api.telegram.org/bot${botToken}/getUpdates`;
       try {
         const response = await fetch(updatesUrl);
         const data = await response.json();
-
         if (!data.result.length) {
-          alert("No messages found. Send 'hi' to the bot first.");
+          alert("No messages found. Please send 'hi' to the bot first.");
           return null;
         }
-
         for (let update of data.result) {
           if (update.message && update.message.from.username === username) {
             return update.message.chat.id;
           }
         }
-
         alert("Username not found. Make sure you sent 'hi' to the bot.");
         return null;
       } catch (error) {
@@ -205,9 +291,9 @@
       }
     }
 
+    // Send the note content to Telegram using sendMessage
     async function sendNoteToTelegram(chatId, noteContent) {
       const sendMessageUrl = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(noteContent)}`;
-
       try {
         await fetch(sendMessageUrl);
         alert("Note sent to Telegram!");
@@ -216,6 +302,7 @@
       }
     }
 
+    // Handle sharing the note via Telegram
     async function shareNoteToTelegram(noteId) {
       const contentEl = document.querySelector(`[data-id="${noteId}"] .card-content`);
       const noteContent = contentEl.innerText.trim();
@@ -223,7 +310,6 @@
         alert("Please enter a note before sending.");
         return;
       }
-
       let chatId = localStorage.getItem("telegram_chat_id");
       if (!chatId) {
         const username = document.getElementById("username").value.trim();
@@ -231,25 +317,12 @@
           alert("Enter your Telegram username and send 'hi' to the bot.");
           return;
         }
-
         chatId = await getChatIdFromUsername(username);
         if (!chatId) return;
-
         localStorage.setItem("telegram_chat_id", chatId);
         alert("Chat ID stored for future messages!");
       }
-
       await sendNoteToTelegram(chatId, noteContent);
-    }
-
-    function saveToLocalStorage() {
-      const notes = Array.from(document.querySelectorAll('.card')).map(card => ({
-        id: card.dataset.id,
-        title: card.querySelector('.card-title').innerText,
-        content: card.querySelector('.card-content').innerText,
-        fontSize: card.querySelector('.card-content').style.fontSize
-      }));
-      localStorage.setItem('notes', JSON.stringify(notes));
     }
   </script>
 </body>
