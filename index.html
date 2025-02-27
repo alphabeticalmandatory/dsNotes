@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimal Notes</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4A90E2;
+      --background: #F5F7FB;
+      --card-bg: rgba(255, 255, 255, 0.9);
+    }
+
+    body {
+      margin: 0;
+      padding: 1rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--background);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+      transition: transform 0.1s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin: 0;
+      flex-grow: 1;
+      padding-right: 1rem;
+    }
+
+    .card-content {
+      flex-grow: 1;
+      line-height: 1.5;
+      color: #444;
+      outline: none;
+      overflow-wrap: anywhere;
+      font-size: 16px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: #666;
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: color 0.2s ease;
+      font-weight: 500;
+      font-size: 1.1rem;
+    }
+
+    .icon-btn:hover {
+      color: var(--primary);
+    }
+
+    .font-controls {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      padding: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="controls">
+      <button class="btn" onclick="addNewTopic()">
+        <i class="fas fa-plus"></i> New Note
+      </button>
+    </div>
+    <div class="grid" id="notesGrid"></div>
+  </div>
+
+  <script>
+    let grid = document.getElementById('notesGrid');
+    
+    document.addEventListener('DOMContentLoaded', loadNotes);
+
+    function addNewTopic(title = 'New Note') {
+      const note = {
+        id: Date.now(),
+        title,
+        content: '',
+        fontSize: '16px'
+      };
+      grid.appendChild(createNoteCard(note));
+      saveToLocalStorage();
+    }
+
+    function createNoteCard(note) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.id = note.id;
+      card.innerHTML = `
+        <div class="card-header">
+          <h3 class="card-title" onclick="editTitle(${note.id})">${note.title}</h3>
+          <div>
+            <div class="font-controls">
+              <button class="icon-btn" onclick="adjustFontSize(${note.id}, -1)">-</button>
+              <button class="icon-btn" onclick="adjustFontSize(${note.id}, 1)">+</button>
+              <button class="icon-btn" onclick="startSpeechRecognition(${note.id})">
+                <i class="fas fa-microphone"></i>
+              </button>
+              <button class="icon-btn" onclick="confirmDelete(${note.id})">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="card-content" 
+             onclick="editContent(this, ${note.id})"
+             style="font-size: ${note.fontSize}">
+          ${note.content}
+        </div>
+      `;
+      return card;
+    }
+
+    function editTitle(noteId) {
+      const titleElement = document.querySelector(`[data-id="${noteId}"] .card-title`);
+      titleElement.setAttribute('contenteditable', 'true');
+      titleElement.focus();
+      titleElement.onblur = () => {
+        titleElement.removeAttribute('contenteditable');
+        updateNote(noteId, titleElement.innerText, 'title');
+      };
+    }
+
+    function editContent(element, noteId) {
+      element.setAttribute('contenteditable', 'true');
+      element.focus();
+      element.onblur = () => {
+        element.removeAttribute('contenteditable');
+        updateNote(noteId, element.innerText, 'content');
+      };
+    }
+
+    function adjustFontSize(noteId, change) {
+      const contentEl = document.querySelector(`[data-id="${noteId}"] .card-content`);
+      const currentSize = parseInt(contentEl.style.fontSize) || 16;
+      const newSize = currentSize + (change * 2);
+      if (newSize >= 12 && newSize <= 32) {
+        contentEl.style.fontSize = `${newSize}px`;
+        saveToLocalStorage();
+      }
+    }
+
+    function confirmDelete(id) {
+      if (confirm("Are you sure you want to delete this note?")) {
+        deleteNote(id);
+      }
+    }
+
+    function deleteNote(id) {
+      document.querySelector(`[data-id="${id}"]`).remove();
+      saveToLocalStorage();
+    }
+
+    function saveToLocalStorage() {
+      const notes = Array.from(document.querySelectorAll('.card')).map(card => ({
+        id: card.dataset.id,
+        title: card.querySelector('.card-title').innerText,
+        content: card.querySelector('.card-content').innerText,
+        fontSize: card.querySelector('.card-content').style.fontSize
+      }));
+      localStorage.setItem('notes', JSON.stringify(notes));
+    }
+
+    function loadNotes() {
+      const notes = JSON.parse(localStorage.getItem('notes')) || [];
+      grid.innerHTML = '';
+      notes.forEach(note => grid.appendChild(createNoteCard(note)));
+    }
+
+    // Speech Recognition (optional)
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    function startSpeechRecognition(noteId) {
+      recognition.start();
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const contentEl = document.querySelector(`[data-id="${noteId}"] .card-content`);
+        contentEl.innerText += ' ' + transcript;
+        saveToLocalStorage();
+      };
+    }
+  </script>
+</body>
+</html>
