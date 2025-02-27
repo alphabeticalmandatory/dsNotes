@@ -3,24 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Bot Message</title>
+    <title>Notes App with Telegram</title>
 </head>
 <body>
 
-    <button id="sendMessageBtn">Send Message</button>
+    <h2>My Notes</h2>
+    <textarea id="noteText" rows="5" cols="40" placeholder="Write your note here..."></textarea>
+    <br>
+    <button id="sendToTelegram">Send to Telegram</button>
 
     <script>
-        document.getElementById("sendMessageBtn").addEventListener("click", function() {
-            const botToken = "7671247026:AAFkZLpgogoMq34dqKAUXO8hVihcRC_eIRc";  // Replace with your bot token
-            const chatId = "5363444485";  // Replace with your chat ID
-            const message = "Hello from my website!";  // Message to send
+        document.getElementById("sendToTelegram").addEventListener("click", async function() {
+            const botToken = "YOUR_BOT_TOKEN";  // Replace with your Telegram bot token
+            const noteContent = document.getElementById("noteText").value;  
 
-            const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
+            if (!noteContent.trim()) {
+                alert("Please enter a note before sending.");
+                return;
+            }
 
-            fetch(url)
-                .then(response => response.json())
-                .then(data => console.log("Message sent:", data))
-                .catch(error => console.error("Error sending message:", error));
+            // Fetch updates from Telegram to get the latest chat ID
+            const updatesUrl = `https://api.telegram.org/bot${botToken}/getUpdates`;
+            try {
+                const response = await fetch(updatesUrl);
+                const data = await response.json();
+
+                if (data.result.length === 0) {
+                    alert("Please start a chat with the bot on Telegram first.");
+                    return;
+                }
+
+                // Get the last user's chat ID
+                const chatId = data.result[data.result.length - 1].message.chat.id;
+
+                // Send the note to Telegram
+                const sendMessageUrl = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(noteContent)}`;
+                await fetch(sendMessageUrl);
+
+                alert("Note sent to Telegram!");
+            } catch (error) {
+                alert("Error sending note to Telegram.");
+            }
         });
     </script>
 
