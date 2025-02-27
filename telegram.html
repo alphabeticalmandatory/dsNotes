@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Bot Message</title>
+</head>
+<body>
+
+    <button id="sendMessageBtn">Send Message</button>
+
+    <script>
+        document.getElementById("sendMessageBtn").addEventListener("click", function() {
+            const botToken = "7671247026:AAFkZLpgogoMq34dqKAUXO8hVihcRC_eIRc";  // Replace with your bot token
+            const chatId = "5363444485";  // Replace with your chat ID
+            const message = "Hello from my website!";  // Message to send
+
+            const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => console.log("Message sent:", data))
+                .catch(error => console.error("Error sending message:", error));
+        });
+    </script>
+
+</body>
+</html>
