@@ -4,24 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quick Notes PWA</title>
-    <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Patrick+Hand&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #007BFF;
             --text-color: #333;
-            --background: #F9FAFB;
-            --card-bg: #FFFFFF;
             --border-radius: 10px;
-            --shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            --shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            --note-colors: #FFEB3B, #FF9800, #FFCDD2, #81C784, #64B5F6, #E1BEE7;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Patrick Hand', cursive;
             margin: 0;
             padding: 20px;
-            background: var(--background);
+            background: #f4f4f4;
             color: var(--text-color);
             display: flex;
             flex-direction: column;
@@ -30,15 +28,15 @@
 
         .controls {
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
             display: flex;
             justify-content: flex-start;
             margin-bottom: 20px;
         }
 
         .btn {
-            padding: 10px 16px;
-            background: var(--primary-color);
+            padding: 12px 18px;
+            background: #007BFF;
             color: white;
             border: none;
             border-radius: var(--border-radius);
@@ -47,32 +45,32 @@
             align-items: center;
             gap: 8px;
             font-size: 14px;
-            transition: background 0.2s;
-        }
-
-        .btn:hover {
-            background: #0056b3;
         }
 
         .grid {
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 15px;
         }
 
         .card {
-            background: var(--card-bg);
+            background: var(--random-color);
             border-radius: var(--border-radius);
-            padding: 16px;
+            padding: 15px;
             box-shadow: var(--shadow);
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             position: relative;
-            transition: transform 0.1s ease-in-out;
+            font-family: 'Permanent Marker', cursive;
+            transform: rotate(-1deg);
         }
 
-        .card:hover {
-            transform: scale(1.02);
+        .card:nth-child(even) {
+            transform: rotate(2deg);
         }
 
         .card-header {
@@ -83,22 +81,18 @@
 
         h3 {
             margin: 0;
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
         }
 
         .content {
             margin-top: 10px;
             padding: 10px;
             border-radius: 6px;
-            background: #f4f4f4;
+            background: rgba(255, 255, 255, 0.5);
             min-height: 40px;
             outline: none;
-            transition: background 0.2s;
-        }
-
-        .content:focus {
-            background: #e9ecef;
         }
 
         .action-buttons {
@@ -119,11 +113,6 @@
             border: none;
             background: transparent;
             color: var(--text-color);
-            transition: background 0.2s, color 0.2s;
-        }
-
-        .icon-btn:hover {
-            background: #e9ecef;
         }
 
         .subtopics-container {
@@ -136,7 +125,7 @@
             justify-content: space-between;
             padding: 8px;
             border-radius: 6px;
-            background: #f4f4f4;
+            background: rgba(255, 255, 255, 0.5);
             margin-top: 5px;
         }
 
@@ -149,7 +138,7 @@
 <body>
     <div class="controls">
         <button class="btn" onclick="addNewTopic()">
-            <i class="fas fa-plus"></i> New Topic
+            <i class="fas fa-plus"></i> New Note
         </button>
     </div>
     <div class="grid" id="notesGrid"></div>
@@ -162,12 +151,13 @@
         recognition.continuous = false;
         recognition.interimResults = false;
 
+        const colors = ['#FFEB3B', '#FF9800', '#FFCDD2', '#81C784', '#64B5F6', '#E1BEE7'];
+
         document.addEventListener('DOMContentLoaded', loadNotes);
 
-        function addNewTopic(title = 'New Topic') {
-            const note = { id: Date.now(), title, content: '', subtopics: [] };
-            const card = createNoteCard(note);
-            grid.appendChild(card);
+        function addNewTopic(title = 'New Note') {
+            const note = { id: Date.now(), title, content: '', subtopics: [], color: colors[Math.floor(Math.random() * colors.length)] };
+            grid.appendChild(createNoteCard(note));
             saveToLocalStorage();
         }
 
@@ -175,17 +165,18 @@
             const card = document.createElement('div');
             card.className = 'card';
             card.dataset.id = note.id;
+            card.style.background = note.color;
             card.innerHTML = `
                 <div class="card-header">
-                    <h3>${note.title}</h3>
+                    <h3 onclick="editTitle(${note.id})">${note.title}</h3>
                     <div class="action-buttons">
                         <button class="icon-btn" onclick="editTitle(${note.id})">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="icon-btn btn-success" onclick="startSpeechRecognition(${note.id})">
+                        <button class="icon-btn" onclick="startSpeechRecognition(${note.id})">
                             <i class="fas fa-microphone"></i>
                         </button>
-                        <button class="icon-btn btn-danger" onclick="deleteNote(${note.id})">
+                        <button class="icon-btn" onclick="deleteNote(${note.id})">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -218,6 +209,25 @@
             };
         }
 
+        function addSubtopic(noteId) {
+            const container = document.querySelector(`[data-id="${noteId}"] .subtopics-container`);
+            const subtopic = document.createElement('div');
+            subtopic.className = 'subtopic';
+            subtopic.innerHTML = `
+                <div contenteditable="true">New Subtopic</div>
+                <button class="icon-btn" onclick="deleteSubtopic(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(subtopic);
+            saveToLocalStorage();
+        }
+
+        function deleteSubtopic(btn) {
+            btn.parentElement.remove();
+            saveToLocalStorage();
+        }
+
         function deleteNote(id) {
             document.querySelector(`[data-id="${id}"]`).remove();
             saveToLocalStorage();
@@ -226,8 +236,7 @@
         function startSpeechRecognition(noteId) {
             recognition.start();
             recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                document.querySelector(`[data-id="${noteId}"] .content`).innerText += ' ' + transcript;
+                document.querySelector(`[data-id="${noteId}"] .content`).innerText += ' ' + event.results[0][0].transcript;
                 saveToLocalStorage();
             };
         }
