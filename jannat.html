@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Minimal Notes with Telegram Integration</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
   <style>
     :root {
       --primary: #4A90E2;
       --background: #F5F7FB;
       --card-bg: rgba(255, 255, 255, 0.9);
     }
+
     body {
       margin: 0;
       padding: 1rem;
@@ -18,10 +22,14 @@
       background: var(--background);
       min-height: 100vh;
     }
+
+    /* Make space at bottom so footer doesn't overlap content */
     .container {
       max-width: 800px;
       margin: 0 auto;
+      margin-bottom: 80px; /* Extra space for the sticky footer */
     }
+
     .btn {
       background: var(--primary);
       color: white;
@@ -38,12 +46,14 @@
     .btn:active {
       transform: scale(0.98);
     }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 1.5rem;
       margin-top: 2rem;
     }
+
     .card {
       background: var(--card-bg);
       border-radius: 12px;
@@ -55,12 +65,14 @@
       display: flex;
       flex-direction: column;
     }
+
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
     }
+
     .card-title {
       font-weight: 600;
       font-size: 1.1rem;
@@ -69,6 +81,7 @@
       padding-right: 1rem;
       cursor: pointer;
     }
+
     .card-content {
       flex-grow: 1;
       line-height: 1.5;
@@ -76,8 +89,9 @@
       overflow-wrap: anywhere;
       font-size: 16px;
       cursor: text;
-      /* contenteditable is set inline below */
+      /* contenteditable is set inline */
     }
+
     .icon-btn {
       background: none;
       border: none;
@@ -91,16 +105,19 @@
     .icon-btn:hover {
       color: var(--primary);
     }
+
     .font-controls {
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
+
     .controls {
       display: flex;
       justify-content: center;
       padding: 2rem 0;
     }
+
     .input-field {
       width: 100%;
       padding: 0.8rem;
@@ -109,23 +126,66 @@
       border-radius: 6px;
       font-size: 1rem;
     }
+
+    /* Sticky Footer */
+    footer.sticky-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      padding: 0.8rem 1rem;
+      font-size: 0.95rem;
+      z-index: 9999; /* So it stays on top of everything */
+    }
+    footer.sticky-footer a {
+      color: #fff;
+      text-decoration: none;
+      margin: 0 0.5rem;
+    }
+    footer.sticky-footer a:hover {
+      color: var(--primary);
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <!-- Username input for Telegram sharing -->
-    <input type="text" id="username" class="input-field" placeholder="Enter your Telegram username (without @)">
+    <input
+      type="text"
+      id="username"
+      class="input-field"
+      placeholder="Enter your Telegram username (without @)"
+    />
+
     <div class="controls">
       <button class="btn" onclick="addNewTopic()">
         <i class="fas fa-plus"></i> New Note
       </button>
     </div>
+
     <div class="grid" id="notesGrid"></div>
   </div>
 
+  <!-- Sticky Footer -->
+  <footer class="sticky-footer">
+    <!-- Example layout: adjust text/icons/links as you prefer -->
+    <div>
+      Made with <span style="color:red;">❤️</span> by <a href="https://t.me/iAmbulkHead" target="_blank">@iAmbulkHead</a>
+      &nbsp; | &nbsp;
+      <a href="https://t.me/iAmbulkHead" target="_blank"><i class="fa-brands fa-telegram"></i></a>
+      &nbsp; | &nbsp;
+      <a href="https://twitter.com/YourTwitterHandle" target="_blank"><i class="fa-brands fa-twitter"></i></a>
+      &nbsp; | &nbsp; 
+      ©️ 2025 mNotes
+    </div>
+  </footer>
+
   <script>
     // Replace with your Telegram bot token
-    const botToken = "7671247026:AAHuAnMitVfNZZB6KhYrbOIAbHshLGm1-u0";  
+    const botToken = "7671247026:AAHDi7jSTw_pMEE2ol8ln7pIHkpbwtA-zkM";
     let grid = document.getElementById('notesGrid');
 
     document.addEventListener('DOMContentLoaded', loadNotes);
@@ -146,7 +206,7 @@
     function loadNotes() {
       const notes = JSON.parse(localStorage.getItem('notes')) || [];
       grid.innerHTML = '';
-      // Newest first
+      // Sort notes by newest first
       notes.sort((a, b) => b.id - a.id).forEach(note => {
         grid.appendChild(createNoteCard(note));
       });
@@ -174,10 +234,10 @@
             </button>
           </div>
         </div>
-        <div class="card-content" 
-             onclick="editContent(this, ${note.id})"
+        <div class="card-content"
              style="font-size: ${note.fontSize}"
-             contenteditable="true">
+             contenteditable="true"
+             onblur="updateNote(${note.id}, this.innerText, 'content')">
           ${note.content}
         </div>
       `;
@@ -192,14 +252,6 @@
       titleElement.onblur = () => {
         titleElement.removeAttribute('contenteditable');
         updateNote(noteId, titleElement.innerText, 'title');
-      };
-    }
-
-    // Edit the note content
-    function editContent(element, noteId) {
-      element.focus();
-      element.onblur = () => {
-        updateNote(noteId, element.innerText, 'content');
       };
     }
 
@@ -251,7 +303,7 @@
       localStorage.setItem('notes', JSON.stringify(notes));
     }
 
-    // Speech Recognition functionality
+    // Speech Recognition
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -266,10 +318,9 @@
     }
 
     // --- Telegram Integration ---
-
     // Remove '@' from username (if present) and fetch the chat ID from getUpdates
     async function getChatIdFromUsername(username) {
-      username = username.replace(/^@/, ""); // Remove '@'
+      username = username.replace(/^@/, ""); // remove '@'
       const updatesUrl = `https://api.telegram.org/bot${botToken}/getUpdates`;
       try {
         const response = await fetch(updatesUrl);
