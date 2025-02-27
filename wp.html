@@ -3,25 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bird's Eye Perspective</title>
+    <title>Document Scanner with OpenCV.js</title>
     <script async src="https://docs.opencv.org/4.5.1/opencv.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/glfx.js/0.0.3/glfx.min.js"></script>
-    <script src="https://pixijs.download/release/pixi.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        #image-container { width: 90vw; margin: auto; overflow: hidden; position: relative; border: 1px solid #ddd; }
+        #canvas { width: 100%; height: auto; }
+        input { margin: 10px; }
+    </style>
 </head>
 <body>
-    <h2>Bird's Eye Perspective Transform</h2>
+    <h2>Document Scanner with OpenCV.js</h2>
     <input type="file" id="upload" accept="image/*">
-    <select id="library">
-        <option value="opencv">OpenCV.js</option>
-        <option value="glfx">glfx.js</option>
-        <option value="pixi">PixiJS</option>
-        <option value="three">Three.js</option>
-    </select>
-    <button onclick="applyTransform()">Apply Transform</button>
+    <button onclick="scanDocument()">Scan Document</button>
 
-    <canvas id="canvas"></canvas>
-    <div id="three-container" style="width: 500px; height: 300px;"></div>
+    <div id="image-container">
+        <canvas id="canvas"></canvas>
+    </div>
 
     <script>
         let imgElement = null;
@@ -34,83 +32,95 @@
             imgElement.onload = () => {
                 const canvas = document.getElementById("canvas");
                 const ctx = canvas.getContext("2d");
-                canvas.width = imgElement.width;
-                canvas.height = imgElement.height;
-                ctx.drawImage(imgElement, 0, 0, imgElement.width, imgElement.height);
+
+                let scaleFactor = Math.min(900 / imgElement.width, 600 / imgElement.height);
+                canvas.width = imgElement.width * scaleFactor;
+                canvas.height = imgElement.height * scaleFactor;
+                
+                ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
             };
             imgElement.src = URL.createObjectURL(file);
         });
 
-        function applyTransform() {
-            const selectedLibrary = document.getElementById("library").value;
-
+        function scanDocument() {
             if (!imgElement) {
                 alert("Please upload an image first.");
                 return;
             }
 
-            if (selectedLibrary === "opencv") {
-                applyOpenCVTransform();
-            } else if (selectedLibrary === "glfx") {
-                applyGLFXTransform();
-            } else if (selectedLibrary === "pixi") {
-                applyPixiTransform();
-            } else if (selectedLibrary === "three") {
-                applyThreeTransform();
-            }
-        }
-
-        function applyOpenCVTransform() {
-            let src = cv.imread('canvas');
+            let canvas = document.getElementById("canvas");
+            let src = cv.imread(canvas);
             let dst = new cv.Mat();
-            let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [0, src.rows, src.cols, src.rows, src.cols * 0.8, 0, src.cols * 0.2, 0]);
-            let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [0, src.rows, src.cols, src.rows, src.cols, 0, 0, 0]);
+            let gray = new cv.Mat();
+            let blurred = new cv.Mat();
+            let edges = new cv.Mat();
 
-            let M = cv.getPerspectiveTransform(srcPts, dstPts);
-            cv.warpPerspective(src, dst, M, new cv.Size(src.cols, src.rows));
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+            cv.Canny(blurred, edges, 50, 150);
 
-            cv.imshow('canvas', dst);
-            src.delete(); dst.delete(); M.delete();
-        }
+            let contours = new cv.MatVector();
+            let hierarchy = new cv.Mat();
+            cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-        function applyGLFXTransform() {
-            let canvas = fx.canvas();
-            let texture = canvas.texture(imgElement);
-            canvas.draw(texture).perspective([0, 0, imgElement.width, 0, 0, imgElement.height, imgElement.width, imgElement.height]).update();
-            document.body.appendChild(canvas);
-        }
+            let maxContour = null;
+            let maxArea = 0;
+            for (let i = 0; i < contours.size(); i++) {
+                let cnt = contours.get(i);
+                let area = cv.contourArea(cnt);
+                if (area > maxArea) {
+                    let peri = cv.arcLength(cnt, true);
+                    let approx = new cv.Mat();
+                    cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
 
-        function applyPixiTransform() {
-            let app = new PIXI.Application({ width: imgElement.width, height: imgElement.height });
-            document.body.appendChild(app.view);
-            let texture = PIXI.Texture.from(imgElement.src);
-            let sprite = new PIXI.Sprite(texture);
-            sprite.perspective = [0, 0, imgElement.width, 0, 0, imgElement.height, imgElement.width, imgElement.height];
-            app.stage.addChild(sprite);
-        }
-
-        function applyThreeTransform() {
-            document.getElementById("three-container").innerHTML = "";
-            let scene = new THREE.Scene();
-            let camera = new THREE.PerspectiveCamera(75, 500 / 300, 0.1, 1000);
-            let renderer = new THREE.WebGLRenderer();
-            renderer.setSize(500, 300);
-            document.getElementById("three-container").appendChild(renderer.domElement);
-
-            let texture = new THREE.TextureLoader().load(imgElement.src);
-            let geometry = new THREE.PlaneGeometry(imgElement.width, imgElement.height);
-            let material = new THREE.MeshBasicMaterial({ map: texture });
-
-            let mesh = new THREE.Mesh(geometry, material);
-            mesh.rotation.x = -Math.PI / 4;
-            scene.add(mesh);
-
-            camera.position.z = 500;
-            function animate() {
-                requestAnimationFrame(animate);
-                renderer.render(scene, camera);
+                    if (approx.rows === 4) {
+                        maxContour = approx;
+                        maxArea = area;
+                    }
+                }
             }
-            animate();
+
+            if (maxContour !== null) {
+                let points = [];
+                for (let i = 0; i < 4; i++) {
+                    let x = maxContour.data32S[i * 2];
+                    let y = maxContour.data32S[i * 2 + 1];
+                    points.push({ x, y });
+                }
+
+                points.sort((a, b) => a.y - b.y);
+                let [topLeft, topRight] = points.slice(0, 2).sort((a, b) => a.x - b.x);
+                let [bottomLeft, bottomRight] = points.slice(2).sort((a, b) => a.x - b.x);
+
+                let width = Math.max(
+                    Math.hypot(bottomRight.x - bottomLeft.x, bottomRight.y - bottomLeft.y),
+                    Math.hypot(topRight.x - topLeft.x, topRight.y - topLeft.y)
+                );
+                let height = Math.max(
+                    Math.hypot(topRight.x - bottomRight.x, topRight.y - bottomRight.y),
+                    Math.hypot(topLeft.x - bottomLeft.x, topLeft.y - bottomLeft.y)
+                );
+
+                let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                    topLeft.x, topLeft.y, topRight.x, topRight.y,
+                    bottomRight.x, bottomRight.y, bottomLeft.x, bottomLeft.y
+                ]);
+                let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                    0, 0, width, 0, width, height, 0, height
+                ]);
+
+                let M = cv.getPerspectiveTransform(srcPts, dstPts);
+                cv.warpPerspective(src, dst, M, new cv.Size(width, height));
+
+                cv.imshow("canvas", dst);
+
+                srcPts.delete(); dstPts.delete(); M.delete();
+            } else {
+                alert("No document detected. Try a clearer image.");
+            }
+
+            src.delete(); dst.delete(); gray.delete(); blurred.delete(); edges.delete();
+            contours.delete(); hierarchy.delete();
         }
     </script>
 </body>
