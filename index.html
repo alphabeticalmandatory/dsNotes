@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:hx="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quick Notes PWA</title>
     <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/htmx.org"></script>
     <style>
         :root {
             --primary-color: #2196F3;
@@ -30,6 +32,7 @@
             padding: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             cursor: move;
+            position: relative;
         }
 
         .card-header {
@@ -45,44 +48,75 @@
             gap: 10px;
         }
 
-        button {
-            padding: 8px 16px;
+        .btn {
+            padding: 12px 20px;
             background: var(--primary-color);
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-success {
+            background: #4CAF50;
         }
 
         [contenteditable="true"] {
             border-bottom: 2px dashed #ccc;
             padding: 5px;
             margin: 5px 0;
+            min-height: 40px;
         }
 
-        .speech-btn {
-            background: #4CAF50;
-            padding: 5px;
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            font-size: 1.2em;
+            padding: 10px;
             border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .subtopic {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
         }
     </style>
 </head>
 <body>
     <div class="controls">
-        <button onclick="addNewTopic()">Add New Topic</button>
+        <button class="btn" hx-post="/add-topic" hx-swap="beforeend" hx-target="#notesGrid" onclick="addNewTopic()">
+            <i class="fas fa-plus"></i> New Topic
+        </button>
     </div>
     <div class="grid" id="notesGrid"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
-        // Initialize Sortable.js for drag and drop
+        // Initialize Sortable.js
         let grid = document.getElementById('notesGrid');
         Sortable.create(grid, {
             animation: 150,
             onUpdate: saveToLocalStorage
         });
 
-        // Speech recognition setup
+        // Speech Recognition Setup
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
@@ -111,53 +145,69 @@
             card.innerHTML = `
                 <div class="card-header">
                     <h3 contenteditable="true" onblur="updateNote(${note.id}, this.innerText, 'title')">${note.title}</h3>
-                    <div>
-                        <button class="speech-btn" onclick="startSpeechRecognition(${note.id})">🎤</button>
-                        <button onclick="deleteNote(${note.id})">×</button>
+                    <div class="action-buttons">
+                        <button class="icon-btn btn-success" onclick="startSpeechRecognition(${note.id})">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button class="icon-btn btn-danger" onclick="deleteNote(${note.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
-                <div contenteditable="true" onblur="updateNote(${note.id}, this.innerText, 'content')">${note.content}</div>
-                <div class="subtopics"></div>
-                <button onclick="addSubtopic(${note.id})">Add Subtopic</button>
+                <div class="content" contenteditable="true" 
+                     onblur="updateNote(${note.id}, this.innerText, 'content')">${note.content}</div>
+                <div class="subtopics-container">
+                    ${note.subtopics.map(st => `
+                        <div class="subtopic">
+                            <i class="fas fa-grip-lines"></i>
+                            <div contenteditable="true">${st}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="btn" onclick="addSubtopic(${note.id})">
+                    <i class="fas fa-plus"></i> Add Subtopic
+                </button>
             `;
             return card;
         }
 
         function startSpeechRecognition(noteId) {
             recognition.start();
+            const noteElement = document.querySelector(`[data-id="${noteId}"] .content`);
+            
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                const noteElement = document.querySelector(`[data-id="${noteId}"] [contenteditable="true"]:last-child`);
                 noteElement.innerText += ' ' + transcript;
                 updateNote(noteId, noteElement.innerText, 'content');
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
             };
         }
 
         function addSubtopic(noteId) {
-            const subtopic = prompt('Enter subtopic name:');
-            if (subtopic) {
-                const note = getNoteById(noteId);
-                note.subtopics.push(subtopic);
-                const subtopicsDiv = document.querySelector(`[data-id="${noteId}"] .subtopics`);
-                const subtopicElem = document.createElement('div');
-                subtopicElem.contentEditable = true;
-                subtopicElem.innerText = subtopic;
-                subtopicsDiv.appendChild(subtopicElem);
-                saveToLocalStorage();
-            }
+            const subtopicsContainer = document.querySelector(`[data-id="${noteId}"] .subtopics-container`);
+            const subtopic = document.createElement('div');
+            subtopic.className = 'subtopic';
+            subtopic.innerHTML = `
+                <i class="fas fa-grip-lines"></i>
+                <div contenteditable="true" onblur="updateSubtopic(${noteId}, this)">New Subtopic</div>
+            `;
+            subtopicsContainer.appendChild(subtopic);
+            updateSubtopicList(noteId);
         }
 
-        function updateNote(id, value, field) {
-            const notes = getNotes();
-            const note = notes.find(n => n.id === id);
-            if (note) {
-                note[field] = value;
-                localStorage.setItem('notes', JSON.stringify(notes));
-            }
+        function updateSubtopicList(noteId) {
+            const note = getNoteById(noteId);
+            const subtopics = Array.from(document.querySelectorAll(`[data-id="${noteId}"] .subtopic div`))
+                .map(el => el.innerText);
+            note.subtopics = subtopics;
+            saveToLocalStorage();
         }
 
         function deleteNote(id) {
-            if (confirm('Are you sure?')) {
+            if (confirm('Are you sure you want to delete this note?')) {
                 const card = document.querySelector(`[data-id="${id}"]`);
                 card.remove();
                 const notes = getNotes().filter(n => n.id !== id);
@@ -165,33 +215,7 @@
             }
         }
 
-        function getNotes() {
-            return JSON.parse(localStorage.getItem('notes') || '[]');
-        }
-
-        function getNoteById(id) {
-            return getNotes().find(n => n.id === id);
-        }
-
-        function loadNotes() {
-            const notes = getNotes();
-            notes.forEach(note => {
-                grid.appendChild(createNoteCard(note));
-            });
-        }
-
-        function saveToLocalStorage() {
-            const notes = [];
-            document.querySelectorAll('.card').forEach(card => {
-                notes.push({
-                    id: Number(card.dataset.id),
-                    title: card.querySelector('h3').innerText,
-                    content: card.querySelector('[contenteditable="true"]:last-child').innerText,
-                    subtopics: []
-                });
-            });
-            localStorage.setItem('notes', JSON.stringify(notes));
-        }
+        // ... (keep the rest of the storage functions from previous version)
 
         // PWA Setup
         if ('serviceWorker' in navigator) {
