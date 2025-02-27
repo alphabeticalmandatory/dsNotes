@@ -2,11 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Quick Notes PWA</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Font Awesome for Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+  
+  <!-- SortableJS for drag-and-drop (still optional, but included) -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Patrick+Hand&display=swap" rel="stylesheet" />
+  
+  <!-- Google Fonts for handwritten style -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Patrick+Hand&display=swap"
+    rel="stylesheet"
+  />
+  
   <style>
     :root {
       --text-color: #333;
@@ -24,6 +37,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      box-sizing: border-box;
     }
 
     .controls {
@@ -47,15 +61,16 @@
       font-size: 14px;
     }
 
+    /* Single-column layout */
     .grid {
       width: 100%;
-      max-width: 900px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      display: flex;
+      flex-direction: column;
       gap: 15px;
     }
 
     .card {
+      width: 100%;
       border-radius: var(--border-radius);
       padding: 15px;
       box-shadow: var(--shadow);
@@ -66,6 +81,7 @@
       position: relative;
       font-family: 'Permanent Marker', cursive;
       transform: rotate(-1deg);
+      box-sizing: border-box;
     }
 
     .card:nth-child(even) {
@@ -134,16 +150,20 @@
     }
   </style>
 </head>
+
 <body>
   <div class="controls">
     <button class="btn" onclick="addNewTopic()">
       <i class="fas fa-plus"></i> New Note
     </button>
   </div>
+  
   <div class="grid" id="notesGrid"></div>
 
   <script>
     let grid = document.getElementById('notesGrid');
+    
+    // Optional: If you still want drag-and-drop reordering of entire notes
     Sortable.create(grid, { animation: 150, onUpdate: saveToLocalStorage });
 
     // Speech Recognition Setup
@@ -151,17 +171,20 @@
     recognition.continuous = false;
     recognition.interimResults = false;
 
-    const colors = ['#FFEB3B', '#FF9800', '#FFCDD2', '#81C784', '#64B5F6', '#E1BEE7'];
+    const colors = [
+      '#FFEB3B', '#FF9800', '#FFCDD2', 
+      '#81C784', '#64B5F6', '#E1BEE7'
+    ];
 
     document.addEventListener('DOMContentLoaded', loadNotes);
 
     function addNewTopic(title = 'New Note') {
-      const note = { 
-        id: Date.now(), 
-        title, 
-        content: '', 
-        subtopics: [], 
-        color: colors[Math.floor(Math.random() * colors.length)] 
+      const note = {
+        id: Date.now(),
+        title,
+        content: '',
+        subtopics: [],
+        color: colors[Math.floor(Math.random() * colors.length)]
       };
       grid.appendChild(createNoteCard(note));
       saveToLocalStorage();
@@ -187,16 +210,22 @@
             </button>
           </div>
         </div>
-        <div class="content" onclick="editContent(this, ${note.id})">${note.content}</div>
+        <div class="content" onclick="editContent(this, ${note.id})">
+          ${note.content}
+        </div>
         <div class="subtopics-container">
-          ${note.subtopics.map(sub => `
-            <div class="subtopic">
-              <div contenteditable="true" onblur="saveToLocalStorage()">${sub}</div>
-              <button class="icon-btn" onclick="deleteSubtopic(this)">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          `).join('')}
+          ${
+            note.subtopics.map(sub => `
+              <div class="subtopic">
+                <div contenteditable="true" onblur="saveToLocalStorage()">
+                  ${sub}
+                </div>
+                <button class="icon-btn" onclick="deleteSubtopic(this)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            `).join('')
+          }
         </div>
         <button class="btn" onclick="addSubtopic(${note.id})">
           <i class="fas fa-plus"></i> Add Subtopic
@@ -259,7 +288,7 @@
     }
 
     function updateNote(noteId, value, key) {
-      // This demo updates via saveToLocalStorage
+      // This triggers a localStorage save
       saveToLocalStorage();
     }
 
@@ -269,7 +298,8 @@
         title: card.querySelector('h3').innerText,
         content: card.querySelector('.content').innerText,
         color: card.style.background,
-        subtopics: Array.from(card.querySelectorAll('.subtopics-container .subtopic div')).map(div => div.innerText)
+        subtopics: Array.from(card.querySelectorAll('.subtopics-container .subtopic div'))
+                        .map(div => div.innerText)
       }));
       localStorage.setItem('notes', JSON.stringify(notes));
     }
