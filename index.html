@@ -1,181 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Quick Notes PWA</title>
-  
-  <!-- Font Awesome for Icons -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  />
-  
-  <!-- SortableJS for drag-and-drop (still optional, but included) -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  
-  <!-- Google Fonts for handwritten style -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Patrick+Hand&display=swap"
-    rel="stylesheet"
-  />
-  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimal Notes</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
-      --text-color: #333;
-      --border-radius: 10px;
-      --shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-      --note-colors: #FFEB3B, #FF9800, #FFCDD2, #81C784, #64B5F6, #E1BEE7;
+      --primary: #4A90E2;
+      --background: #F5F7FB;
+      --card-bg: rgba(255, 255, 255, 0.9);
     }
 
     body {
-      font-family: 'Patrick Hand', cursive;
       margin: 0;
-      padding: 20px;
-      background: #f4f4f4;
-      color: var(--text-color);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      box-sizing: border-box;
+      padding: 1rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--background);
+      min-height: 100vh;
     }
 
-    .controls {
-      width: 100%;
-      max-width: 900px;
-      display: flex;
-      justify-content: flex-start;
-      margin-bottom: 20px;
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
     }
 
     .btn {
-      padding: 12px 18px;
-      background: #007BFF;
+      background: var(--primary);
       color: white;
       border: none;
-      border-radius: var(--border-radius);
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 14px;
+      gap: 0.5rem;
+      font-size: 1rem;
+      transition: transform 0.1s ease;
     }
 
-    /* Single-column layout */
+    .btn:active {
+      transform: scale(0.98);
+    }
+
     .grid {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
     }
 
     .card {
-      width: 100%;
-      border-radius: var(--border-radius);
-      padding: 15px;
-      box-shadow: var(--shadow);
-      min-height: 150px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      min-height: 180px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      position: relative;
-      font-family: 'Permanent Marker', cursive;
-      transform: rotate(-1deg);
-      box-sizing: border-box;
-    }
-
-    .card:nth-child(even) {
-      transform: rotate(2deg);
     }
 
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 1rem;
     }
 
-    h3 {
+    .card-title {
+      font-weight: 600;
+      font-size: 1.1rem;
       margin: 0;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
+      flex-grow: 1;
+      padding-right: 1rem;
     }
 
-    .content {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.5);
-      min-height: 40px;
+    .card-content {
+      flex-grow: 1;
+      line-height: 1.5;
+      color: #444;
       outline: none;
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 8px;
+      overflow-wrap: anywhere;
     }
 
     .icon-btn {
-      font-size: 1rem;
-      padding: 6px;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
+      background: none;
       border: none;
-      background: transparent;
-      color: var(--text-color);
+      color: #666;
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: color 0.2s ease;
     }
 
-    .subtopics-container {
-      margin-top: 10px;
+    .icon-btn:hover {
+      color: var(--primary);
     }
 
-    .subtopic {
+    .controls {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.5);
-      margin-top: 5px;
-    }
-
-    .subtopic div {
-      outline: none;
-      flex-grow: 1;
+      justify-content: center;
+      padding: 2rem 0;
     }
   </style>
 </head>
-
 <body>
-  <div class="controls">
-    <button class="btn" onclick="addNewTopic()">
-      <i class="fas fa-plus"></i> New Note
-    </button>
+  <div class="container">
+    <div class="controls">
+      <button class="btn" onclick="addNewTopic()">
+        <i class="fas fa-plus"></i> New Note
+      </button>
+    </div>
+    <div class="grid" id="notesGrid"></div>
   </div>
-  
-  <div class="grid" id="notesGrid"></div>
 
   <script>
+    // (Keep the original JavaScript functionality, removing subtopic-related code)
     let grid = document.getElementById('notesGrid');
     
-    // Optional: If you still want drag-and-drop reordering of entire notes
-    Sortable.create(grid, { animation: 150, onUpdate: saveToLocalStorage });
-
-    // Speech Recognition Setup
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    const colors = [
-      '#FFEB3B', '#FF9800', '#FFCDD2', 
-      '#81C784', '#64B5F6', '#E1BEE7'
-    ];
-
     document.addEventListener('DOMContentLoaded', loadNotes);
 
     function addNewTopic(title = 'New Note') {
@@ -183,8 +126,6 @@
         id: Date.now(),
         title,
         content: '',
-        subtopics: [],
-        color: colors[Math.floor(Math.random() * colors.length)]
       };
       grid.appendChild(createNoteCard(note));
       saveToLocalStorage();
@@ -194,14 +135,10 @@
       const card = document.createElement('div');
       card.className = 'card';
       card.dataset.id = note.id;
-      card.style.background = note.color;
       card.innerHTML = `
         <div class="card-header">
-          <h3 onclick="editTitle(${note.id})">${note.title}</h3>
-          <div class="action-buttons">
-            <button class="icon-btn" onclick="editTitle(${note.id})">
-              <i class="fas fa-edit"></i>
-            </button>
+          <h3 class="card-title" onclick="editTitle(${note.id})">${note.title}</h3>
+          <div>
             <button class="icon-btn" onclick="startSpeechRecognition(${note.id})">
               <i class="fas fa-microphone"></i>
             </button>
@@ -210,32 +147,16 @@
             </button>
           </div>
         </div>
-        <div class="content" onclick="editContent(this, ${note.id})">
+        <div class="card-content" onclick="editContent(this, ${note.id})">
           ${note.content}
         </div>
-        <div class="subtopics-container">
-          ${
-            note.subtopics.map(sub => `
-              <div class="subtopic">
-                <div contenteditable="true" onblur="saveToLocalStorage()">
-                  ${sub}
-                </div>
-                <button class="icon-btn" onclick="deleteSubtopic(this)">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            `).join('')
-          }
-        </div>
-        <button class="btn" onclick="addSubtopic(${note.id})">
-          <i class="fas fa-plus"></i> Add Subtopic
-        </button>
       `;
       return card;
     }
 
+    // Keep remaining JavaScript functions the same (removing subtopic-related functions)
     function editTitle(noteId) {
-      const titleElement = document.querySelector(`[data-id="${noteId}"] h3`);
+      const titleElement = document.querySelector(`[data-id="${noteId}"] .card-title`);
       titleElement.setAttribute('contenteditable', 'true');
       titleElement.focus();
       titleElement.onblur = () => {
@@ -253,53 +174,16 @@
       };
     }
 
-    function startSpeechRecognition(noteId) {
-      recognition.start();
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        const contentEl = document.querySelector(`[data-id="${noteId}"] .content`);
-        contentEl.innerText += ' ' + transcript;
-        saveToLocalStorage();
-      };
-    }
-
-    function addSubtopic(noteId) {
-      const container = document.querySelector(`[data-id="${noteId}"] .subtopics-container`);
-      const subtopic = document.createElement('div');
-      subtopic.className = 'subtopic';
-      subtopic.innerHTML = `
-        <div contenteditable="true" onblur="saveToLocalStorage()">New Subtopic</div>
-        <button class="icon-btn" onclick="deleteSubtopic(this)">
-          <i class="fas fa-trash"></i>
-        </button>
-      `;
-      container.appendChild(subtopic);
-      saveToLocalStorage();
-    }
-
-    function deleteSubtopic(btn) {
-      btn.parentElement.remove();
-      saveToLocalStorage();
-    }
-
     function deleteNote(id) {
       document.querySelector(`[data-id="${id}"]`).remove();
-      saveToLocalStorage();
-    }
-
-    function updateNote(noteId, value, key) {
-      // This triggers a localStorage save
       saveToLocalStorage();
     }
 
     function saveToLocalStorage() {
       const notes = Array.from(document.querySelectorAll('.card')).map(card => ({
         id: card.dataset.id,
-        title: card.querySelector('h3').innerText,
-        content: card.querySelector('.content').innerText,
-        color: card.style.background,
-        subtopics: Array.from(card.querySelectorAll('.subtopics-container .subtopic div'))
-                        .map(div => div.innerText)
+        title: card.querySelector('.card-title').innerText,
+        content: card.querySelector('.card-content').innerText,
       }));
       localStorage.setItem('notes', JSON.stringify(notes));
     }
@@ -308,6 +192,21 @@
       const notes = JSON.parse(localStorage.getItem('notes')) || [];
       grid.innerHTML = '';
       notes.forEach(note => grid.appendChild(createNoteCard(note)));
+    }
+
+    // Speech Recognition (optional - can remove if not needed)
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    function startSpeechRecognition(noteId) {
+      recognition.start();
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const contentEl = document.querySelector(`[data-id="${noteId}"] .card-content`);
+        contentEl.innerText += ' ' + transcript;
+        saveToLocalStorage();
+      };
     }
   </script>
 </body>
