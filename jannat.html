@@ -4,17 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Minimal Notes with Telegram Integration</title>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-YDMTCTQ0ZB"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-YDMTCTQ0ZB');
-</script> <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
   />
   <style>
     :root {
@@ -371,7 +361,7 @@
       if (!chatId) {
         const username = document.getElementById("username").value.trim();
         if (!username) {
-          alert("Send 'hi' to @dsnotesbotenter and type your Telegram username.");
+          alert("Send 'hi' to @dsnotesbot and type your Telegram username.");
           return;
         }
         chatId = await getChatIdFromUsername(username);
